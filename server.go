@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -60,6 +61,9 @@ func (this *Server) Handler(conn net.Conn) {
 
 	user.Online()
 
+	//监听是否活跃的channel
+	isLive := make(chan bool)
+
 	//接受客户端发送的消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -80,11 +84,24 @@ func (this *Server) Handler(conn net.Conn) {
 
 			//用户针对msg进行消息处理
 			user.DoMessage(msg)
+
+			//发送任意信息刷新在线状态
+			isLive <- true
 		}
 	}()
 
 	//当前handler阻塞
-	select {}
+	for {
+		select {
+		case <-time.After(time.Second * 10):
+			//超时用户
+			user.SendMsg("长时间未操作，登出")
+			close(user.C)
+			conn.Close()
+			return
+		}
+	}
+
 }
 
 // 启动服务器的接口
