@@ -93,7 +93,7 @@ func (this *Server) Handler(conn net.Conn) {
 	//当前handler阻塞
 	for {
 		select {
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Hour * 10):
 			//超时用户
 			user.SendMsg("长时间未操作，登出")
 			close(user.C)
